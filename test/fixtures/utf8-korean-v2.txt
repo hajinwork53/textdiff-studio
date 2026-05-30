@@ -1,0 +1,12 @@
+안녕하세요!
+한글 인코딩 테스트입니다.
+이 파일은 UTF-8 로 저장되어야 합니다 (v2 수정).
+
+def 함수(매개변수, 옵션=None):
+    """한글 docstring (옵션 추가)"""
+    if 옵션 == "double":
+        return 매개변수 * 2
+    return 매개변수
+
+result = 함수("테스트", 옵션="double")
+print(f"결과: {result}")

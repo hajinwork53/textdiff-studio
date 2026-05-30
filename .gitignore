@@ -1,0 +1,53 @@
+# Node / npm
+node_modules/
+package-lock.json.bak
+*.log
+
+# Build outputs
+dist/
+dist-electron/
+dist-cli/
+out/
+release/
+*.exe
+*.zip
+
+# Vite
+.vite/
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# TextDiff Studio 자체 스냅샷 (개발 중 테스트용)
+.textdiff-snapshots/
+snapshots/
+
+# 테스트 결과
+coverage/
+playwright-report/
+test-results/
+
+# 환경 변수
+.env
+.env.local
+.env.*.local
+
+# 사용자 설정 (electron-store 등)
+user-config.json
+
+# 임시 파일
+*.tmp
+*.bak
+
+# Public repo 에서 제외 — 개인 개발 노트
+plan/
+00_프롬프트.md

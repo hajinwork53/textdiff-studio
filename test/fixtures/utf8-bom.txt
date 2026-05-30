@@ -1,0 +1,3 @@
+﻿BOM test file
+Second line
+Third line

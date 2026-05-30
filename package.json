@@ -1,0 +1,110 @@
+{
+  "name": "textdiff-studio",
+  "version": "0.1.0",
+  "description": "AI 코딩 검증 워크벤치 — Windows 데스크탑 diff 뷰어",
+  "main": "dist-electron/main.js",
+  "private": true,
+  "author": "hajinwork53",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k -n vite,electron -c blue,green \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:5173 && tsc -p electron/tsconfig.json && cross-env NODE_ENV=development electron .",
+    "build": "vue-tsc --noEmit && vite build && tsc -p electron/tsconfig.json",
+    "build:cli": "node -e \"const v=require('./package.json').version;require('esbuild').buildSync({entryPoints:['cli/index.ts'],bundle:true,platform:'node',target:'node18',outfile:'dist-cli/textdiff.js',external:['electron','fsevents'],format:'cjs',define:{'__TEXTDIFF_VERSION__':JSON.stringify(v)}})\"",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "package": "npm run build && electron-builder --win nsis portable",
+    "package:portable": "npm run build && electron-builder --win portable",
+    "package:dir": "npm run build && electron-builder --win --dir",
+    "package:simple": "npm run build && node build/package.mjs",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "build": {
+    "appId": "com.vibe-coding.textdiff-studio",
+    "productName": "TextDiff Studio",
+    "copyright": "Copyright 2026 ${author}",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json",
+      "!**/*.map",
+      "!**/test/**"
+    ],
+    "asarUnpack": [
+      "**/node_modules/@vscode/ripgrep/**",
+      "**/node_modules/@vscode/ripgrep-win32-x64/**",
+      "**/node_modules/@vscode/ripgrep-win32-arm64/**",
+      "**/node_modules/@vscode/ripgrep-win32-ia32/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TextDiff Studio",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "publish": null
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.0",
+    "@playwright/test": "^1.49.0",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^22.10.2",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-monaco-editor": "^1.1.0",
+    "vitest": "^2.1.8",
+    "vue-tsc": "^2.1.10",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "@vscode/ripgrep": "^1.18.0",
+    "check-disk-space": "^3.4.0",
+    "chokidar": "^4.0.1",
+    "iconv-lite": "^0.6.3",
+    "ignore": "^7.0.5",
+    "jschardet": "^3.1.4",
+    "jszip": "^3.10.1",
+    "lucide-vue-next": "^0.469.0",
+    "markdown-it": "^14.1.0",
+    "monaco-editor": "^0.52.2",
+    "pinia": "^2.3.0",
+    "simple-git": "^3.27.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  }
+}
