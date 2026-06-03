@@ -58,45 +58,77 @@ const DEFAULT_MAX = 500
 const TEXT_CAP = 200
 
 /**
- * win32-x64 의 rg.exe 절대 경로.
+ * 플랫폼별 @vscode/ripgrep 서브패키지명 + 바이너리명.
  *
- * dev 모드: require.resolve 로 node_modules 안 위치
+ *   process.platform  process.arch   →  서브패키지                    바이너리
+ *   ───────────────────────────────────────────────────────────────────────
+ *   win32             x64            →  @vscode/ripgrep-win32-x64     rg.exe
+ *   win32             arm64          →  @vscode/ripgrep-win32-arm64   rg.exe
+ *   darwin            arm64          →  @vscode/ripgrep-darwin-arm64  rg   ← 타깃
+ *   darwin            x64            →  @vscode/ripgrep-darwin-x64    rg
+ *
+ * @vscode/ripgrep 는 install 시 현재 플랫폼 서브패키지를 optionalDependencies 로 자동 설치.
+ * DRY: resolveRgPath 의 1차/2차 경로가 모두 이 결과를 참조한다.
+ */
+export function rgSubpackage(): { pkg: string; bin: string } {
+  const platform = process.platform // 'win32' | 'darwin' | 'linux'
+  const arch = process.arch // 'x64' | 'arm64' | 'ia32' ...
+  const bin = platform === 'win32' ? 'rg.exe' : 'rg'
+  const pkg = `@vscode/ripgrep-${platform}-${arch}`
+  return { pkg, bin }
+}
+
+/**
+ * packed asar 내부 경로인가 (= spawn 불가). app.asar.unpacked 는 실제 파일이라 제외.
+ *
+ *   app.asar/node_modules/...        → packed (가상, spawn 실패)  → true
+ *   app.asar.unpacked/node_modules/… → 실제 파일                 → false
+ *   <dev node_modules>/…             → 실제 파일                 → false
+ */
+function isInsidePackedAsar(p: string): boolean {
+  return p.includes(`app.asar${path.sep}`) || p.endsWith(`${path.sep}app.asar`)
+}
+
+/**
+ * rg 바이너리 절대 경로 (플랫폼 자동 분기).
+ *
+ * dev 모드: require.resolve 로 node_modules 안(hoisted) 위치
  * packaged 모드 (electron-builder + asarUnpack):
- *   require.resolve 가 app.asar.unpacked 폴더로 자동 해석
- *   ↑ 실패 시 process.resourcesPath 기반 수동 fallback (Day 10.5 hotfix)
- *
- * Day 8.5 는 Windows 만 지원. 추후 cross-platform 시 분기.
+ *   require.resolve 가 packed asar 가상 경로를 줄 수 있음(spawn 불가) → 실파일만 채택.
+ *   npm hoisting 결과에 따라 바이너리가 top-level 또는 @vscode/ripgrep 하위(nested)에
+ *   풀릴 수 있어, app.asar.unpacked 아래 두 위치를 모두 시도한다. (검증: 맥 .app 은 nested)
  */
 export function resolveRgPath(): string {
-  // 1차: require.resolve (dev + packaged 정상 케이스)
+  const { pkg, bin } = rgSubpackage()
+  const pkgDir = pkg.replace('@vscode/', '') // 'ripgrep-darwin-arm64'
+  const fs = require('fs')
+
+  // 1차: require.resolve (dev + packaged 정상 케이스).
+  // packed asar 가상 경로(spawn 불가)는 거르고, 실제 파일만 채택.
   try {
-    const pkgJson = require.resolve('@vscode/ripgrep-win32-x64/package.json')
-    const candidate = path.join(path.dirname(pkgJson), 'bin', 'rg.exe')
-    // require.resolve 가 asar 안의 가상 경로를 반환하면 spawn 실패 — 실제 파일 존재 검증
-    // electron-builder + asarUnpack 가 정상 동작하면 .asar.unpacked 경로 반환됨
-    if (require('fs').existsSync(candidate)) return candidate
+    const pkgJson = require.resolve(`${pkg}/package.json`)
+    const candidate = path.join(path.dirname(pkgJson), 'bin', bin)
+    if (fs.existsSync(candidate) && !isInsidePackedAsar(candidate)) return candidate
   } catch {
     // continue to fallback
   }
 
-  // 2차: process.resourcesPath 기반 수동 fallback (packaged)
-  // app.asar.unpacked/node_modules/@vscode/ripgrep-win32-x64/bin/rg.exe
+  // 2차: process.resourcesPath 기반 수동 fallback (packaged).
+  // hoisted / nested 두 레이아웃을 모두 시도 → npm 호이스팅 차이에 강건.
   const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
   if (resourcesPath) {
-    const fallback = path.join(
-      resourcesPath,
-      'app.asar.unpacked',
-      'node_modules',
-      '@vscode',
-      'ripgrep-win32-x64',
-      'bin',
-      'rg.exe',
-    )
-    if (require('fs').existsSync(fallback)) return fallback
+    const base = path.join(resourcesPath, 'app.asar.unpacked', 'node_modules', '@vscode')
+    const candidates = [
+      path.join(base, pkgDir, 'bin', bin), // hoisted: @vscode/ripgrep-<plat>-<arch>/bin/<bin>
+      path.join(base, 'ripgrep', 'node_modules', '@vscode', pkgDir, 'bin', bin), // nested
+    ]
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c
+    }
   }
 
   throw new Error(
-    'rg.exe 위치를 찾을 수 없습니다. ripgrep 바이너리가 누락되었거나 ' +
+    `${bin} 위치를 찾을 수 없습니다. ripgrep 바이너리(${pkg})가 누락되었거나 ` +
       'asarUnpack 설정이 잘못되었습니다.',
   )
 }

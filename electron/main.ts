@@ -10,6 +10,7 @@ import { registerClipboardIpc } from './ipc/clipboard'
 import { registerGitIpc } from './ipc/git'
 import { registerTrackerIpc } from './ipc/tracker'
 import { registerSnapshotIpc } from './ipc/snapshot'
+import { applyAppMenu } from './lib/menu'
 
 // Day 10.5 hotfix: ELECTRON_RUN_AS_NODE 환경변수 안전망
 // 이 변수가 set 되어 있으면 Electron .exe 가 일반 Node 처럼 동작 → main process 미동작 → silent exit
@@ -158,6 +159,8 @@ if (!gotLock) {
     registerGitIpc()
     registerTrackerIpc()
     registerSnapshotIpc()
+
+    applyAppMenu() // 맥 Edit 메뉴 적용 (Cmd+C/V/X/A — 기능 #3). 윈도우는 no-op
 
     createWindow()
 

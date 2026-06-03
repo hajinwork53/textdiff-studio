@@ -1,11 +1,14 @@
 {
   "name": "textdiff-studio",
   "version": "0.1.0",
-  "description": "AI 코딩 검증 워크벤치 — Windows 데스크탑 diff 뷰어",
+  "description": "AI 코딩 검증 워크벤치 — 크로스플랫폼(Windows/macOS) 데스크탑 diff 뷰어",
   "main": "dist-electron/main.js",
   "private": true,
   "author": "hajinwork53",
   "license": "MIT",
+  "bin": {
+    "textdiff": "dist-cli/textdiff.js"
+  },
   "scripts": {
     "dev": "concurrently -k -n vite,electron -c blue,green \"npm:dev:vite\" \"npm:dev:electron\"",
     "dev:vite": "vite",
@@ -19,6 +22,8 @@
     "package:portable": "npm run build && electron-builder --win portable",
     "package:dir": "npm run build && electron-builder --win --dir",
     "package:simple": "npm run build && node build/package.mjs",
+    "package:mac": "npm run build && electron-builder --mac dmg zip --arm64",
+    "install:cli": "npm run build:cli && npm link",
     "type-check": "vue-tsc --noEmit"
   },
   "build": {
@@ -40,7 +45,9 @@
       "**/node_modules/@vscode/ripgrep/**",
       "**/node_modules/@vscode/ripgrep-win32-x64/**",
       "**/node_modules/@vscode/ripgrep-win32-arm64/**",
-      "**/node_modules/@vscode/ripgrep-win32-ia32/**"
+      "**/node_modules/@vscode/ripgrep-win32-ia32/**",
+      "**/node_modules/@vscode/ripgrep-darwin-arm64/**",
+      "**/node_modules/@vscode/ripgrep-darwin-x64/**"
     ],
     "win": {
       "target": [
@@ -70,6 +77,41 @@
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "identity": null,
+      "hardenedRuntime": false,
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "${productName} ${version}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "publish": null
   },

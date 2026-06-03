@@ -1,12 +1,12 @@
 # TextDiff Studio
 
-> **AI 코딩 검증 워크벤치** — Windows 데스크탑 텍스트 비교 도구
+> **AI 코딩 검증 워크벤치** — 크로스플랫폼(Windows / macOS) 데스크탑 텍스트 비교 도구
 
 AI 에게 코드 수정을 시킨 뒤 "정말 이렇게 바뀐 게 맞나?" 확인하기 위한 도구입니다. 단순 diff 뷰어가 아니라 **AI 코딩 흐름에 특화된 7가지 기능**을 모았습니다.
 
-![Tests](https://img.shields.io/badge/tests-200%20passed-success)
+![Tests](https://img.shields.io/badge/tests-205%20passed-success)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey)
 ![Electron](https://img.shields.io/badge/Electron-33-47848f)
 ![Vue](https://img.shields.io/badge/Vue-3-42b883)
 
@@ -39,9 +39,15 @@ AI 에게 코드 수정을 시킨 뒤 "정말 이렇게 바뀐 게 맞나?" 확�
 
 ### 사전 요구사항
 
-- **Windows 10/11** (Mac/Linux 빌드는 v1.1+)
+- **Windows 10/11** 또는 **macOS (Apple Silicon / arm64)**
 - **Node.js 22+** (https://nodejs.org/en/download — LTS 권장)
 - **Git** (소스 클론 + 본 도구의 Git 비교 기능 사용 시)
+
+> **macOS 사용자 메모**
+> - `npm install` 시 darwin-arm64 ripgrep 바이너리가 자동 설치됩니다.
+> - 클립보드 비교는 **Cmd+V**, CLI 설치는 `npm run install:cli` 후 `textdiff a b`.
+> - `.dmg` 빌드는 `npm run package:mac`. 서명 안 한 빌드라 첫 실행은 우클릭→열기 또는
+>   `xattr -dr com.apple.quarantine "/Applications/TextDiff Studio.app"` 로 Gatekeeper 1회 우회.
 
 ### 설치 + 실행
 

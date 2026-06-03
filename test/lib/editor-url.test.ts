@@ -22,6 +22,21 @@ describe('buildEditorUrl', () => {
       )
     })
 
+    // TST-2 (macOS 마이그레이션): 맥 절대경로는 /Users/... 로 시작 →
+    // VS Code 공식 규약 vscode://file/{전체경로} 에 따라 file/ + /Users 로 더블슬래시.
+    // 라이브 검증(2026-06-03): 맥 VS Code 가 이 형식을 수용하여 파일을 엶.
+    it('맥 절대경로 (단순)', () => {
+      expect(buildEditorUrl('/Users/user/code/app.ts', 7, vscode)).toBe(
+        'vscode://file//Users/user/code/app.ts:7',
+      )
+    })
+
+    it('맥 절대경로 (공백 + 한글) → percent encoding', () => {
+      expect(buildEditorUrl('/Users/user/AI 프로젝트/main.ts', 42, vscode)).toBe(
+        'vscode://file//Users/user/AI%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/main.ts:42',
+      )
+    })
+
     it('공백 포함 경로 → %20', () => {
       expect(buildEditorUrl('C:\\Program Files\\app.html', 100, vscode)).toBe(
         'vscode://file/C:/Program%20Files/app.html:100',

@@ -1,5 +1,32 @@
-import { describe, it, expect } from 'vitest'
-import { buildRgArgs, parseRgJsonLine, parseRgStderrLine } from '../../electron/lib/ripgrep'
+import { describe, it, expect, afterEach } from 'vitest'
+import {
+  buildRgArgs,
+  parseRgJsonLine,
+  parseRgStderrLine,
+  rgSubpackage,
+} from '../../electron/lib/ripgrep'
+
+describe('rgSubpackage 플랫폼 매핑', () => {
+  const orig = { platform: process.platform, arch: process.arch }
+  const set = (platform: string, arch: string) => {
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true })
+    Object.defineProperty(process, 'arch', { value: arch, configurable: true })
+  }
+  afterEach(() => set(orig.platform, orig.arch))
+
+  it('darwin/arm64 → darwin-arm64 + rg', () => {
+    set('darwin', 'arm64')
+    expect(rgSubpackage()).toEqual({ pkg: '@vscode/ripgrep-darwin-arm64', bin: 'rg' })
+  })
+  it('win32/x64 → win32-x64 + rg.exe (회귀)', () => {
+    set('win32', 'x64')
+    expect(rgSubpackage()).toEqual({ pkg: '@vscode/ripgrep-win32-x64', bin: 'rg.exe' })
+  })
+  it('darwin/x64 → darwin-x64 + rg', () => {
+    set('darwin', 'x64')
+    expect(rgSubpackage()).toEqual({ pkg: '@vscode/ripgrep-darwin-x64', bin: 'rg' })
+  })
+})
 
 describe('buildRgArgs', () => {
   it('기본 옵션 (fixed-string, case-insensitive)', () => {
@@ -69,7 +96,9 @@ describe('buildRgArgs', () => {
 })
 
 describe('parseRgJsonLine', () => {
-  const root = 'D:\\proj'
+  // macOS 마이그레이션: ripgrep 은 실행 OS 의 네이티브 경로를 emit 한다(맥=POSIX).
+  // 픽스처를 POSIX 절대경로로 통일 — toRelpathPosix(path.relative)가 양 플랫폼에서 동일 동작.
+  const root = '/proj'
 
   it('빈 줄 / 빈 문자열 → null', () => {
     expect(parseRgJsonLine('', root)).toBeNull()
@@ -90,7 +119,7 @@ describe('parseRgJsonLine', () => {
     const line = JSON.stringify({
       type: 'match',
       data: {
-        path: { text: 'D:\\proj\\src\\App.vue' },
+        path: { text: '/proj/src/App.vue' },
         lines: { text: '  const msg = "회원가입 완료"\n' },
         line_number: 42,
         submatches: [{ start: 18, end: 22, match: { text: '회원' } }],
@@ -98,7 +127,7 @@ describe('parseRgJsonLine', () => {
     })
     const hit = parseRgJsonLine(line, root)
     expect(hit).not.toBeNull()
-    expect(hit!.path).toBe('D:\\proj\\src\\App.vue')
+    expect(hit!.path).toBe('/proj/src/App.vue')
     expect(hit!.relpath).toBe('src/App.vue') // POSIX 슬래시
     expect(hit!.line).toBe(42)
     expect(hit!.column).toBe(19) // 18 + 1 (1-based)
@@ -110,7 +139,7 @@ describe('parseRgJsonLine', () => {
     const line = JSON.stringify({
       type: 'match',
       data: {
-        path: { text: 'D:\\proj\\a.ts' },
+        path: { text: '/proj/a.ts' },
         lines: { text: longText },
         line_number: 1,
         submatches: [{ start: 0, end: 1, match: { text: 'a' } }],
@@ -122,7 +151,7 @@ describe('parseRgJsonLine', () => {
   })
 
   it('bytes (base64) 형식도 지원', () => {
-    const pathBytes = Buffer.from('D:\\proj\\a.ts', 'utf8').toString('base64')
+    const pathBytes = Buffer.from('/proj/a.ts', 'utf8').toString('base64')
     const linesBytes = Buffer.from('hello world', 'utf8').toString('base64')
     const line = JSON.stringify({
       type: 'match',
@@ -134,7 +163,7 @@ describe('parseRgJsonLine', () => {
       },
     })
     const hit = parseRgJsonLine(line, root)
-    expect(hit!.path).toBe('D:\\proj\\a.ts')
+    expect(hit!.path).toBe('/proj/a.ts')
     expect(hit!.text).toBe('hello world')
   })
 
@@ -142,7 +171,7 @@ describe('parseRgJsonLine', () => {
     const line = JSON.stringify({
       type: 'match',
       data: {
-        path: { text: 'D:\\proj\\a.ts' },
+        path: { text: '/proj/a.ts' },
         lines: { text: 'x' },
         line_number: 5,
       },
@@ -155,7 +184,7 @@ describe('parseRgJsonLine', () => {
     const line = JSON.stringify({
       type: 'match',
       data: {
-        path: { text: 'D:\\proj\\a.ts' },
+        path: { text: '/proj/a.ts' },
         lines: { text: 'x' },
         line_number: 0,
       },
