@@ -35,7 +35,22 @@ AI 에게 코드 수정을 시킨 뒤 "정말 이렇게 바뀐 게 맞나?" 확�
 
 ---
 
-## 🚀 빠른 시작
+## 📥 다운로드 / 설치 (Node.js 없이 바로 사용)
+
+**[➡️ 최신 설치 파일 다운로드](https://github.com/hajinwork53/textdiff-studio/releases/latest)** — Windows·macOS 둘 다 제공.
+
+| OS | 받을 파일 |
+|----|----------|
+| 🍎 **macOS** (Apple Silicon) | `...-arm64.dmg` (설치형) |
+| 🪟 **Windows** | `...-Setup-...exe` (설치형) / `...-portable.exe` (무설치) |
+
+설치 단계별 안내(첫 실행 경고 우회 포함)와 사용법은:
+- 📖 **[INSTALL.md](./INSTALL.md)** — 설치 방법 (맥·윈도우)
+- 📖 **[USAGE.md](./USAGE.md)** — 기능별 사용법
+
+---
+
+## 🚀 빠른 시작 (개발자 — 소스 빌드)
 
 ### 사전 요구사항
 
