@@ -1,0 +1,60 @@
+name: Release
+
+# v* 태그를 push 하면 윈도우(.exe)와 맥(.dmg/.zip) 설치 파일을 자동 빌드해
+# 같은 태그의 GitHub Release 에 첨부한다. 단일 repo 로 양 플랫폼 동시 관리.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: # 수동 실행도 허용
+
+permissions:
+  contents: write # Release 생성/에셋 업로드용
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            package_script: package:mac # → release/*.dmg, *.zip (arm64)
+            artifacts: |
+              release/*.dmg
+              release/*.zip
+          - os: windows-latest
+            package_script: package # → release/*Setup*.exe, *portable*.exe
+            artifacts: |
+              release/*.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build + package
+        run: npm run ${{ matrix.package_script }}
+        env:
+          # electron-builder publish 는 package.json 에서 null → 여기선 빌드만.
+          # 맥은 identity:null 로 서명 생략(공증 미적용). 윈도우는 NSIS/portable.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attach to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifacts }}
+          draft: false
+          fail_on_unmatched_files: false
+          body: |
+            TextDiff Studio — 크로스플랫폼 설치 파일
+
+            - **macOS (Apple Silicon)**: `*-arm64.dmg` (서명 없음 → 첫 실행 시 우클릭→열기 또는 `xattr -dr com.apple.quarantine`)
+            - **Windows**: `*-Setup-*.exe` (설치형) / `*-portable.exe` (무설치)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
